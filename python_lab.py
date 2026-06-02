@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 
 
 ################################################
-alpha=0.25
-span=6
-sps=8
+alpha=1
+span=10
+sps=10
 rrc=True
 
 #######################################
@@ -119,33 +119,49 @@ class RaisedCosineFilter:
 
         return h
 
-    def plot(self, time_domain=True, freq_domain=False):
+def plot_comparativa(lista_de_filtros):
 
-        t = np.arange(-len(self.taps)//2, len(self.taps)//2 + 1) / self.sps
+    plt.figure(figsize=(10, 8), dpi=100)
+    colores = ['b', 'r', 'g']
 
-        if time_domain:
-            plt.figure(figsize=(10, 4))
-            plt.plot(t[:len(self.taps)], self.taps, label="Impulse Response")
-            plt.title("Raised Cosine Filter (Time Domain)")
-            plt.xlabel("Time [symbol periods]")
-            plt.ylabel("Amplitude")
-            plt.grid(True)
-            plt.legend()
-            plt.tight_layout()
-            plt.show()
 
-        if freq_domain:
-            H = np.fft.fftshift(np.fft.fft(self.taps, 1024))
-            f = np.linspace(-0.5, 0.5, len(H), endpoint=False)
-            plt.figure(figsize=(10, 4))
-            plt.plot(f, 20 * np.log10(np.abs(H) + 1e-6), label="Frequency Response [dB]")
-            plt.title("Raised Cosine Filter (Frequency Domain)")
-            plt.xlabel("Normalized Frequency [×π rad/sample]")
-            plt.ylabel("Magnitude [dB]")
-            plt.grid(True)
-            plt.legend()
-            plt.tight_layout()
-            plt.show()
+    plt.subplot(2, 1, 1)
+    for idx, f_obj in enumerate(lista_de_filtros):
+        t = np.arange(-len(f_obj.taps)//2, len(f_obj.taps)//2 + 1) / f_obj.sps
+        t = t[:len(f_obj.taps)]
+        
+        tipo_lbl = "RRC" if f_obj.rrc else "RC"
+        leyenda_txt = f"Filtro {idx+1}: {tipo_lbl} (alpha={f_obj.alpha})"
+        
+        plt.stem(t, f_obj.taps, linefmt=colores[idx]+'-', markerfmt=colores[idx]+'o', 
+                 basefmt='k-', label=leyenda_txt)
+        
+    plt.title("Raised Cosine Filter (Time Domain)")
+    plt.xlabel("Time [symbol periods]")
+    plt.ylabel("Amplitude")
+    plt.grid(True)
+    plt.legend()
+
+    plt.subplot(2, 1, 2)
+    for idx, f_obj in enumerate(lista_de_filtros):
+        H = np.fft.fftshift(np.fft.fft(f_obj.taps, 256))
+        f = np.linspace(-0.5, 0.5, len(H), endpoint=False)
+        
+        
+        tipo_lbl = "RRC" if f_obj.rrc else "RC"
+        leyenda_txt = f"Filtro {idx+1}: {tipo_lbl} (alpha={f_obj.alpha})"
+        
+        plt.stem(f, 20 * np.log10(np.abs(H + 1e-6)), linefmt=colores[idx]+'-', 
+                 markerfmt=' ', basefmt='k-', label=leyenda_txt)
+        
+    plt.title("Raised Cosine Filter (Frequency Domain)")
+    plt.xlabel("Normalized Frequency [×π rad/sample]")
+    plt.ylabel("Magnitude [dB]")
+    plt.grid(True)
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.show()
 
     def get_coefficients(self):
         return self.taps
@@ -156,49 +172,55 @@ ser.isOpen()
 ser.timeout=None
 ser.flushInput() # limpia buffer de entrada
 ser.flushOutput() # limpia buffer de salida nm  
-
-while 1:
-    print('Menu\n')
-    print('1 - Factor de roll-off\n')
-    print('2 - Span\n')
-    print('3 - Sps\n')
-    print('4 - Tipo de filtro\n')
- 
-    comando = send()
-    match comando:
-        case "1":
-            print("Factor de roll-off\n")
-            alpha = float(send())
-        case "2":
-            print("Span\n")
-            span = int(send())
-        case "3":
-            print("Sps\n")
-            sps = int(send())
-        case "4":  # Este es el caso por defecto (default)
-            print("Tipo de filtro\n")
-            print("Inrese 1 para rrc o 0 para rc")
-            tipo = send();
-            if tipo == 1:
-                rrc= True;
-            else:
-                rrc= False;
-        case _:  # Este es el caso por defecto (default)
-            print(f"Roll off: {alpha}, span: {span}, sps: {sps}, tipo: {rrc}")
-            break
-
-
+#######################################
+# ---- FILTRO
 #######################################
 
-# ---- FILTRO
+lista_filtros = []
+max_filtros = 3
 
-########################################
-
+for i in range(max_filtros):
+    print(f"\n=========================================")
+    print(f" CONFIGURACIÓN DEL FILTRO N°{i+1} DE {max_filtros}")
+    print(f"=========================================")
     
+    alpha = 0.25
+    span = 6
+    sps = 8
+    rrc = True
 
-filtro = RaisedCosineFilter(alpha, span, sps, rrc)
+    while 1:
+        print('Menu\n')
+        print('1 - Factor de roll-off\n')
+        print('2 - Span\n')
+        print('3 - Sps\n')
+        print('4 - Tipo de filtro\n')
+        print(f'Cualquier otra tecla - Confirmar filtro {i+1} y continuar\n')
+     
+        comando = send()
+        match comando:
+            case "1":
+                print("Factor de roll-off\n")
+                alpha = float(send())
+            case "2":
+                print("Span\n")
+                span = int(send())
+            case "3":
+                print("Sps\n")
+                sps = int(send())
+            case "4":  
+                print("Tipo de filtro\n")
+                print("Ingrese 1 para rrc o 0 para rc")
+                tipo = send()
+                if tipo == "1":
+                    rrc = True
+                else:
+                    rrc = False
+            case _:  
+                print(f"Filtro {i+1} guardado -> Roll off: {alpha}, span: {span}, sps: {sps}, tipo: {rrc}\n")
+                break
 
-coef = filtro.get_coefficients()
-print(coef)
+    filtro_objeto = RaisedCosineFilter(alpha, span, sps, rrc)
+    lista_filtros.append(filtro_objeto)
 
-filtro.plot(time_domain=True, freq_domain=True)
+plot_comparativa(lista_filtros)
