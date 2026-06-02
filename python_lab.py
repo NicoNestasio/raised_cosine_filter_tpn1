@@ -182,14 +182,16 @@ ser.flushOutput() # limpia buffer de salida nm
 # ---- FILTRO
 #######################################
 
-lista_filtros = []
-max_filtros = 3
 
-for i in range(max_filtros):
+lista_filtros = []
+contador_filtros = 1
+
+while True:
     print(f"\n=========================================")
-    print(f" CONFIGURACIÓN DEL FILTRO N°{i+1} DE {max_filtros}")
+    print(f" CONFIGURACIÓN DEL FILTRO N°{contador_filtros}")
     print(f"=========================================")
     
+    # Valores iniciales recomendados por defecto para cada filtro nuevo
     alpha = 0.25
     span = 6
     sps = 8
@@ -202,7 +204,7 @@ for i in range(max_filtros):
         print(f'2 - Span [Actual: {span}]\n')
         print(f'3 - Sps [Actual: {sps}]\n')
         print(f'4 - Tipo de filtro [Actual: {tipo_actual}]\n')
-        print(f'Cualquier otra tecla - Confirmar filtro {i+1} y continuar\n')
+        print(f'Cualquier otra tecla - Confirmar filtro {contador_filtros} y continuar\n')
      
         comando = send()
         match comando:
@@ -232,10 +234,28 @@ for i in range(max_filtros):
                 else:
                     rrc = False
             case _:  
-                print(f"Filtro {i+1} guardado -> Roll off: {alpha}, span: {span}, sps: {sps}, tipo: {rrc}\n")
+                print(f"Filtro {contador_filtros} guardado -> Roll off: {alpha}, span: {span}, sps: {sps}, tipo: {rrc}\n")
                 break
 
+    # Creamos el objeto y lo guardamos
+    # Creamos el objeto y lo guardamos
     filtro_objeto = RaisedCosineFilter(alpha, span, sps, rrc)
     lista_filtros.append(filtro_objeto)
 
+    # --- CONTROL INTERACTIVO CON MÁXIMO DE 4 FILTROS ---
+    if contador_filtros >= 3:
+        print("\nSe ha alcanzado el límite máximo de 3 filtros configurados.")
+        print("Generando ploteo comparativo...")
+        break
+    else:
+        print("¿Desea ingresar otro filtro? (y/n):")
+        respuesta = send().strip().lower()
+        
+        if respuesta == 'n':
+            print("\nFinalizando carga de filtros. Generando ploteo comparativo...")
+            break
+        else:
+            contador_filtros += 1
+
+# Ploteo dinámico con los filtros que el usuario cargó
 plot_comparativa(lista_filtros)
