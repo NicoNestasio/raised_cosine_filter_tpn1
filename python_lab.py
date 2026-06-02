@@ -4,19 +4,11 @@ import serial
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-################################################
-alpha=1
-span=10
-sps=10
-rrc=True
+#############################################
 
 #######################################
-
 # ---- PUERTO SERIE
-
 ########################################
-#############################################
 # Nota:
 # Comentar esta linea si se utiliza el puerto serie
 # con la FPGA
@@ -36,32 +28,11 @@ ser = serial.serial_for_url('loop://', timeout=1) ## en loop transmite localment
 #n b)
 
 
-##################### FUNCIONES #######################
-def send():
-    while 1 :
-        char_v = []
-        data = input("ToSent: ")
-        if data == 'exit':
-            if ser.isOpen():
-                ser.close()
-            break
-        else:
-            # Arma el vector a transmitir
-            for ptr in range(len(data)):
-                char_v.append(data[ptr])
-    #       print(char_v)
-            
-            for ptr in range(len(char_v)):
-                ser.write(char_v[ptr].encode())
-                #time.sleep(1)
+##################### FUNCIONES Y CLASES #######################
 
-            out = ''
-            while ser.inWaiting() > 0:
-                out += ser.read(1).decode()
-
-#            if out != '':
-#               print(">> " + out)
-            return out
+#######################################
+# ---- FILTRO
+########################################
     
 class RaisedCosineFilter:
     def __init__(self, alpha, span, sps, rrc):
@@ -118,6 +89,40 @@ class RaisedCosineFilter:
                            (1 - (2 * self.alpha * ti / T) ** 2)
 
         return h
+    
+#######################################
+# ---- PUERTO SERIE
+########################################
+
+def send():
+    while 1 :
+        char_v = []
+        data = input("ToSent: ")
+        if data == 'exit':
+            if ser.isOpen():
+                ser.close()
+            break
+        else:
+            # Arma el vector a transmitir
+            for ptr in range(len(data)):
+                char_v.append(data[ptr])
+    #       print(char_v)
+            
+            for ptr in range(len(char_v)):
+                ser.write(char_v[ptr].encode())
+                #time.sleep(1)
+
+            out = ''
+            while ser.inWaiting() > 0:
+                out += ser.read(1).decode()
+
+#            if out != '':
+#               print(">> " + out)
+            return out
+        
+#######################################
+# ---- PLOTEO
+########################################
 
 def plot_comparativa(lista_de_filtros):
 
@@ -146,17 +151,12 @@ def plot_comparativa(lista_de_filtros):
     for idx, f_obj in enumerate(lista_de_filtros):
         H = np.fft.fftshift(np.fft.fft(f_obj.taps, 256))
         f = np.linspace(-0.5, 0.5, len(H), endpoint=False)
-        
-        # 1. Obtenemos la magnitud absoluta (escala lineal)
-        magnitud_lineal = np.abs(H)
-        
-        # 2. NORMALIZACIÓN: Dividimos por el máximo para que el techo sea 1.0
-        magnitud_normalizada = magnitud_lineal / np.max(magnitud_lineal)
+
         
         tipo_lbl = "RRC" if f_obj.rrc else "RC"
         leyenda_txt = f"Filtro {idx+1}: {tipo_lbl} (alpha={f_obj.alpha})"
         
-        markerline, stemlines, baseline = plt.stem(f, magnitud_normalizada, linefmt=colores[idx]+'-', 
+        markerline, stemlines, baseline = plt.stem(f, 20 * np.log10(np.abs(H) + 1e-6), linefmt=colores[idx]+'-', 
                                                    markerfmt=' ', basefmt='k-', bottom=0, label=leyenda_txt)
         plt.setp(stemlines, alpha=0.5)
         
@@ -177,11 +177,12 @@ def plot_comparativa(lista_de_filtros):
 ser.isOpen()
 ser.timeout=None
 ser.flushInput() # limpia buffer de entrada
-ser.flushOutput() # limpia buffer de salida nm  
-#######################################
-# ---- FILTRO
-#######################################
+ser.flushOutput() # limpia buffer de salida nm
 
+
+#######################################
+# ---- MENÚ
+#######################################
 
 lista_filtros = []
 contador_filtros = 1
@@ -191,7 +192,6 @@ while True:
     print(f" CONFIGURACIÓN DEL FILTRO N°{contador_filtros}")
     print(f"=========================================")
     
-    # Valores iniciales recomendados por defecto para cada filtro nuevo
     alpha = 0.25
     span = 6
     sps = 8
@@ -237,12 +237,9 @@ while True:
                 print(f"Filtro {contador_filtros} guardado -> Roll off: {alpha}, span: {span}, sps: {sps}, tipo: {rrc}\n")
                 break
 
-    # Creamos el objeto y lo guardamos
-    # Creamos el objeto y lo guardamos
     filtro_objeto = RaisedCosineFilter(alpha, span, sps, rrc)
     lista_filtros.append(filtro_objeto)
 
-    # --- CONTROL INTERACTIVO CON MÁXIMO DE 4 FILTROS ---
     if contador_filtros >= 3:
         print("\nSe ha alcanzado el límite máximo de 3 filtros configurados.")
         print("Generando ploteo comparativo...")
@@ -257,5 +254,4 @@ while True:
         else:
             contador_filtros += 1
 
-# Ploteo dinámico con los filtros que el usuario cargó
 plot_comparativa(lista_filtros)
