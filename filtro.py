@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class RaisedCosineFilter:
-    def __init__(self, alpha=0.25, span=6, sps=8, rrc=True):
+    def __init__(self, alpha=0.01, span=6, sps=8, rrc=False):
         """
         Filtro de coseno realzado o raíz de coseno realzado.
         

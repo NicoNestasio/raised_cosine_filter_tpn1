@@ -122,7 +122,7 @@ class RaisedCosineFilter:
 def plot_comparativa(lista_de_filtros):
 
     plt.figure(figsize=(10, 8), dpi=100)
-    colores = ['b', 'r', 'g']
+    colores = ['c', 'm', 'y']
 
 
     plt.subplot(2, 1, 1)
@@ -147,12 +147,18 @@ def plot_comparativa(lista_de_filtros):
         H = np.fft.fftshift(np.fft.fft(f_obj.taps, 256))
         f = np.linspace(-0.5, 0.5, len(H), endpoint=False)
         
+        # 1. Obtenemos la magnitud absoluta (escala lineal)
+        magnitud_lineal = np.abs(H)
+        
+        # 2. NORMALIZACIÓN: Dividimos por el máximo para que el techo sea 1.0
+        magnitud_normalizada = magnitud_lineal / np.max(magnitud_lineal)
         
         tipo_lbl = "RRC" if f_obj.rrc else "RC"
         leyenda_txt = f"Filtro {idx+1}: {tipo_lbl} (alpha={f_obj.alpha})"
         
-        plt.stem(f, 20 * np.log10(np.abs(H + 1e-6)), linefmt=colores[idx]+'-', 
-                 markerfmt=' ', basefmt='k-', label=leyenda_txt)
+        markerline, stemlines, baseline = plt.stem(f, magnitud_normalizada, linefmt=colores[idx]+'-', 
+                                                   markerfmt=' ', basefmt='k-', bottom=0, label=leyenda_txt)
+        plt.setp(stemlines, alpha=0.5)
         
     plt.title("Raised Cosine Filter (Frequency Domain)")
     plt.xlabel("Normalized Frequency [×π rad/sample]")
@@ -187,26 +193,35 @@ for i in range(max_filtros):
     alpha = 0.25
     span = 6
     sps = 8
-    rrc = True
+    rrc = False
 
     while 1:
-        print('Menu\n')
-        print('1 - Factor de roll-off\n')
-        print('2 - Span\n')
-        print('3 - Sps\n')
-        print('4 - Tipo de filtro\n')
+        tipo_actual = "RRC" if rrc else "RC"
+
+        print(f'1 - Factor de roll-off [Actual: {alpha}]\n')
+        print(f'2 - Span [Actual: {span}]\n')
+        print(f'3 - Sps [Actual: {sps}]\n')
+        print(f'4 - Tipo de filtro [Actual: {tipo_actual}]\n')
         print(f'Cualquier otra tecla - Confirmar filtro {i+1} y continuar\n')
      
         comando = send()
         match comando:
             case "1":
                 print("Factor de roll-off\n")
-                alpha = float(send())
+                while True:
+                    print("Ingrese un valor entre 0 y 1 (ej: 0.25):")
+                    valor_ingresado = float(send())
+                    if 0.0 <= valor_ingresado <= 1.0:
+                        alpha = valor_ingresado
+                        print(f"Roll-off aceptado: {alpha}\n")
+                        break
+                    else:
+                        print("Error: El factor debe estar entre 0 y 1. Intente de nuevo.\n")               
             case "2":
                 print("Span\n")
                 span = int(send())
             case "3":
-                print("Sps\n")
+                print("Muestras por símbolo (Sps)\n")
                 sps = int(send())
             case "4":  
                 print("Tipo de filtro\n")
