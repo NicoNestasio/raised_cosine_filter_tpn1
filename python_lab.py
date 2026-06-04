@@ -118,7 +118,7 @@ def send():
 
 #            if out != '':
 #               print(">> " + out)
-            return out
+            return out      #retorna la salida del puerto serie (si es que hay algo para leer) o una cadena vacía si no hay nada
         
 #######################################
 # ---- PLOTEO
@@ -127,7 +127,7 @@ def send():
 def plot_comparativa(lista_de_filtros):
 
     plt.figure(figsize=(10, 8), dpi=100)
-    colores = ['c', 'm', 'y']
+    colores = ['c', 'm', 'y'] #colores para diferenciar cada filtro en el ploteo (cyan, magenta, amarillo)
 
 
     plt.subplot(2, 1, 1)
@@ -139,7 +139,7 @@ def plot_comparativa(lista_de_filtros):
         leyenda_txt = f"Filtro {idx+1}: {tipo_lbl} (alpha={f_obj.alpha})"
         
         plt.stem(t, f_obj.taps, linefmt=colores[idx]+'-', markerfmt=colores[idx]+'o', 
-                 basefmt='k-', label=leyenda_txt)
+                 basefmt='k-', label=leyenda_txt) #se reemplaza el método plot por stem
         
     plt.title("Raised Cosine Filter (Time Domain)")
     plt.xlabel("Time [symbol periods]")
@@ -149,16 +149,16 @@ def plot_comparativa(lista_de_filtros):
 
     plt.subplot(2, 1, 2)
     for idx, f_obj in enumerate(lista_de_filtros):
-        H = np.fft.fftshift(np.fft.fft(f_obj.taps, 256))
+        H = np.fft.fftshift(np.fft.fft(f_obj.taps, 256)) #se reemplaza la FFT normal por una FFT con 256 puntos para mejorar la resolución
         f = np.linspace(-0.5, 0.5, len(H), endpoint=False)
 
         
         tipo_lbl = "RRC" if f_obj.rrc else "RC"
         leyenda_txt = f"Filtro {idx+1}: {tipo_lbl} (alpha={f_obj.alpha})"
         
-        markerline, stemlines, baseline = plt.stem(f, 20 * np.log10(np.abs(H) + 1e-6), linefmt=colores[idx]+'-', 
-                                                   markerfmt=' ', basefmt='k-', bottom=0, label=leyenda_txt)
-        plt.setp(stemlines, alpha=0.5)
+        stemlines = plt.stem(f, 20 * np.log10(np.abs(H) + 1e-6), linefmt=colores[idx]+'-', 
+                                                   markerfmt=' ', basefmt='k-', bottom=0, label=leyenda_txt) 
+        plt.setp(stemlines, alpha=0.5) #se ajusta la transparencia de las barras para mejorar visualización
         
     plt.title("Raised Cosine Filter (Frequency Domain)")
     plt.xlabel("Normalized Frequency [×π rad/sample]")
@@ -167,6 +167,7 @@ def plot_comparativa(lista_de_filtros):
     plt.legend()
     
     plt.tight_layout()
+    #plt.savefig("c:\\Users\\Nico\\Pictures\\Filtros_comparativa.png")
     plt.show()
 
     def get_coefficients(self):
@@ -213,7 +214,7 @@ while True:
                 while True:
                     print("Ingrese un valor entre 0 y 1 (ej: 0.25):")
                     valor_ingresado = float(send())
-                    if 0.0 <= valor_ingresado <= 1.0:
+                    if 0.0 < valor_ingresado <= 1.0:    #valida que el valor ingresado esté dentro del rango permitido para el factor de roll-off.
                         alpha = valor_ingresado
                         print(f"Roll-off aceptado: {alpha}\n")
                         break
@@ -230,15 +231,15 @@ while True:
                 print("Ingrese 1 para rrc o 0 para rc")
                 tipo = send()
                 if tipo == "1":
-                    rrc = True
+                    rrc = True #raíz de coseno realzado
                 else:
-                    rrc = False
+                    rrc = False #coseno realzado
             case _:  
                 print(f"Filtro {contador_filtros} guardado -> Roll off: {alpha}, span: {span}, sps: {sps}, tipo: {rrc}\n")
                 break
 
-    filtro_objeto = RaisedCosineFilter(alpha, span, sps, rrc)
-    lista_filtros.append(filtro_objeto)
+    filtro_objeto = RaisedCosineFilter(alpha, span, sps, rrc)    #crea un objeto de la clase RaisedCosineFilter con los parámetros configurados por el usuario.
+    lista_filtros.append(filtro_objeto)      #guarda el objeto del filtro configurado en una lista para luego generar el ploteo comparativo.
 
     if contador_filtros >= 3:
         print("\nSe ha alcanzado el límite máximo de 3 filtros configurados.")
@@ -254,4 +255,4 @@ while True:
         else:
             contador_filtros += 1
 
-plot_comparativa(lista_filtros)
+plot_comparativa(lista_filtros) #genera el ploteo comparativo de los filtros configurados.
