@@ -132,7 +132,10 @@ def plot_comparativa(lista_de_filtros):
 
     plt.subplot(2, 1, 1)
     for idx, f_obj in enumerate(lista_de_filtros):
-        t = np.arange(-len(f_obj.taps)//2, len(f_obj.taps)//2 + 1) / f_obj.sps
+        # Definimos el inicio y el fin del tiempo exactamente usando el span
+        mitad_span = f_obj.span / 2
+        t = np.linspace(-mitad_span, mitad_span, len(f_obj.taps)) #corrección para que el eje de tiempo esté centrado en cero
+        #t = np.arange(-len(f_obj.taps)//2, len(f_obj.taps)//2 + 1) / f_obj.sps
         t = t[:len(f_obj.taps)]
         
         tipo_lbl = "RRC" if f_obj.rrc else "RC"
@@ -154,7 +157,7 @@ def plot_comparativa(lista_de_filtros):
 
         
         tipo_lbl = "RRC" if f_obj.rrc else "RC"
-        leyenda_txt = f"Filtro {idx+1}: {tipo_lbl} (alpha={f_obj.alpha})"
+        leyenda_txt = f"Filtro {idx+1}: {tipo_lbl} (alpha={f_obj.alpha})" 
         
         stemlines = plt.stem(f, 20 * np.log10(np.abs(H) + 1e-6), linefmt=colores[idx]+'-', 
                                                    markerfmt=' ', basefmt='k-', bottom=0, label=leyenda_txt) 
@@ -195,7 +198,7 @@ while True:
     
     alpha = 0.25
     span = 6
-    sps = 8
+    sps = 12
     rrc = False
 
     while 1:
